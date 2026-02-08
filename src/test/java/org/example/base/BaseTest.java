@@ -18,8 +18,8 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Optional;
 import org.testng.annotations.Parameters;
 
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import java.time.Duration;
 
@@ -31,7 +31,8 @@ import java.time.Duration;
 public class BaseTest {
     protected WebDriver driver;
     protected WebDriverWait wait;
-    private static final Logger logger = LogManager.getLogger(BaseTest.class);
+    // Use the JDK logger to avoid external logging dependency issues in the IDE/build
+    private static final Logger logger = Logger.getLogger(BaseTest.class.getName());
 
     @BeforeMethod
     @Parameters({"browser"})
@@ -153,7 +154,8 @@ public class BaseTest {
         try {
             Thread.sleep(milliseconds);
         } catch (InterruptedException e) {
-            logger.error("Thread interrupted during wait: ", e);
+            // Log using java.util.logging
+            logger.log(Level.SEVERE, "Thread interrupted during wait: ", e);
         }
     }
 }
