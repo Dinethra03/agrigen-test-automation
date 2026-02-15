@@ -39,10 +39,45 @@ public class LoginPage {
      * @param username Username to enter
      */
     public void enterUsername(String username) {
-        WebElement usernameElement = wait.until(ExpectedConditions.elementToBeClickable(usernameField));
+        if (username == null) throw new IllegalArgumentException("username cannot be null");
+
+        // Candidate locators to try (primary + fallbacks)
+        By[] candidates = new By[] {
+                usernameField,
+                Locators.LoginPage.USERNAME_BY_LABEL,
+                By.cssSelector("input[name='username']"),
+                By.xpath("//input[contains(translate(@id,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'user')]")
+        };
+
+        WebElement usernameElement = null;
+        // Use a slightly longer local wait for this commonly flaky element
+        WebDriverWait localWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+        for (By by : candidates) {
+            try {
+                // Wait for visibility first, then for clickability
+                usernameElement = localWait.until(ExpectedConditions.visibilityOfElementLocated(by));
+                localWait.until(ExpectedConditions.elementToBeClickable(by));
+                if (usernameElement != null && usernameElement.isDisplayed()) {
+                    break; // found a usable element
+                }
+            } catch (Exception ignored) {
+                usernameElement = null; // try next locator
+            }
+        }
+
+        // Last-resort: try first input in the login form
+        if (usernameElement == null) {
+            try {
+                usernameElement = localWait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//form//input[1]")));
+                try { localWait.until(ExpectedConditions.elementToBeClickable(usernameElement)); } catch (Exception ignored) {}
+            } catch (Exception e) {
+                throw new RuntimeException("Username field not found using known locators", e);
+            }
+        }
 
         // Try clicking to focus and clearing any existing value
-        try { usernameElement.click(); } catch (Exception ignored) {}
+        try { usernameElement.click(); Thread.sleep(100); } catch (Exception ignored) {}
         try { usernameElement.clear(); } catch (Exception ignored) {}
 
         // Primary attempt: sendKeys
@@ -62,9 +97,12 @@ public class LoginPage {
             }
         }
 
+        final WebElement finalUsernameElement = usernameElement;
+        final String finalUsername = username;
+
         // Verify the value was entered (short verification)
         try {
-            wait.until(d -> usernameElement.getAttribute("value") != null && usernameElement.getAttribute("value").contains(username));
+            wait.until(d -> finalUsernameElement.getAttribute("value") != null && finalUsernameElement.getAttribute("value").contains(finalUsername));
         } catch (Exception ignored) {
             // ignore - some inputs may not reflect immediately
         }
@@ -75,9 +113,12 @@ public class LoginPage {
      * @param password Password to enter
      */
     public void enterPassword(String password) {
-        WebElement passwordElement = wait.until(ExpectedConditions.elementToBeClickable(passwordField));
 
-        try { passwordElement.click(); Thread.sleep(200); } catch (Exception ignored) {}
+        // Wait for visible, NOT clickable
+        WebElement passwordElement =
+                wait.until(ExpectedConditions.visibilityOfElementLocated(passwordField));
+
+        try { passwordElement.click(); Thread.sleep(100); } catch (Exception ignored) {}
         try { passwordElement.clear(); } catch (Exception ignored) {}
 
         // Primary: sendKeys
@@ -90,28 +131,42 @@ public class LoginPage {
             } catch (Exception ignored) {
                 // Last resort: JS
                 try {
-                    ((JavascriptExecutor) driver).executeScript("arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input'));", passwordElement, password);
+                    ((JavascriptExecutor) driver).executeScript(
+                            "arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input'));",
+                            passwordElement, password
+                    );
                 } catch (Exception finalEx) {
                     throw new RuntimeException("Failed to enter password", finalEx);
                 }
             }
         }
 
-        // Verify the value was entered (short verification)
+        // Final references for lambda
+        final WebElement finalPasswordElement = passwordElement;
+
+        // Verify value entered
         try {
-            wait.until(d -> passwordElement.getAttribute("value") != null && !passwordElement.getAttribute("value").isEmpty());
-        } catch (Exception ignored) {
-            // ignore
-        }
+            wait.until(d -> {
+                String v = finalPasswordElement.getAttribute("value");
+                return v != null && !v.isEmpty();
+            });
+        } catch (Exception ignored) {}
     }
+
 
     /**
      * Click the login button
      */
     public void clickLogin() {
-        wait.until(ExpectedConditions.elementToBeClickable(loginButton)).click();
-    }
 
+        WebElement button =
+                wait.until(ExpectedConditions.presenceOfElementLocated(loginButton));
+
+        wait.until(ExpectedConditions.visibilityOf(button));
+
+        // Prefer JS click for MUI
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", button);
+    }
     /**
      * Get error message text
      * @return Error message displayed on page

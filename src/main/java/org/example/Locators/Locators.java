@@ -13,20 +13,20 @@ public class Locators {
     public static class LoginPage {
         // Input fields - Using placeholder text as fallback
         public static final By USERNAME_FIELD = By.xpath("//input[@placeholder='Username']");
-        public static final By PASSWORD_FIELD = By.xpath("//input[@placeholder='Password']");
+        public static final By PASSWORD_FIELD = By.xpath("//input[@type='password']");
 
         // Alternative locators using label text
         public static final By USERNAME_BY_LABEL = By.xpath("//label[text()='Username']/following-sibling::input");
         public static final By PASSWORD_BY_LABEL = By.xpath("//label[text()='Password']/following-sibling::input");
 
         // Login button
-        public static final By LOGIN_BUTTON = By.xpath("//button[contains(text(),'SIGN IN NOW')]");
+        public static final By LOGIN_BUTTON =By.xpath("//button[.//span[normalize-space()='Sign in now']]");
 
         // Alternative button locator
         public static final By LOGIN_BUTTON_ALT = By.xpath("//button[contains(normalize-space(),'SIGN IN')]");
 
         // Error messages
-        public static final By ERROR_MESSAGE = By.xpath("//*[contains(text(),'Error: Invalid username or password')]");
+        public static final By ERROR_MESSAGE =By.xpath("//div[contains(@class,'MuiAlert-message') and contains(.,'Invalid username or password')]");
         public static final By ERROR_CONTAINER = By.xpath("//*[contains(@style,'background') and contains(text(),'Error')]");
         public static final By ANY_ERROR = By.xpath("//*[contains(text(),'Error') or contains(text(),'error')]");
     }
@@ -43,10 +43,10 @@ public class Locators {
 
     public static class DashboardPage {
         // Logo
-        public static final By AGRIGEN_LOGO = By.xpath("//*[contains(text(),'AgriGEN')]");
+        public static final By AGRIGEN_LOGO = By.xpath("//img[contains(@src,'AgriGEN.png')]");
 
         // User profile
-        public static final By USER_NAME = By.xpath("//*[contains(text(),'Dinethra R')]");
+        public static final By USER_NAME =By.xpath("//h6[contains(@class,'MuiTypography-h6') and contains(@class,'MuiTypography-colorPrimary') and text()='Dinethra R']");
         public static final By USER_SHORT_NAME = By.xpath("//*[contains(text(),'Dine')]");
         public static final By USER_AVATAR = By.xpath("//img[@alt='user-avatar'] | //*[contains(@class,'avatar')]");
 
